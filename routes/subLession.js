@@ -1,5 +1,5 @@
 const express = require('express');
-const { SubLession } = require('../models/db');
+const { SubLession, Reply, Comment } = require('../models/db');
 const router = express.Router();
 
 router.post('/create', async (req, res) => {
@@ -14,5 +14,15 @@ router.post('/create', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
+router.get('/:subLessionId', async (req, res) => {
+  const subLessionId = req.params.subLessionId;
+  const subLession = await SubLession.findOne({
+    where: { id: subLessionId },
+    include: { model: Comment, include: { model: Reply } }
+  });
+  if (!subLession) {
+    res.status(404).send('subLession not found');
+  }
+  res.status(200).json(subLession);
+});
 module.exports = router;

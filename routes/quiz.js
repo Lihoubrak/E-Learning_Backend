@@ -1,5 +1,5 @@
 const express = require('express');
-const { Quiz } = require('../models/db');
+const { Quiz, Question, QuestionOption } = require('../models/db');
 const router = express.Router();
 
 router.post('/create', async (req, res) => {
@@ -15,4 +15,15 @@ router.post('/create', async (req, res) => {
   }
 });
 
+router.get('/:quizId', async (req, res) => {
+  const quizId = req.params.quizId;
+  const quiz = await Quiz.findOne({
+    where: { id: quizId },
+    include: { model: Question, include: { model: QuestionOption } }
+  });
+  if (!quiz) {
+    res.status(404).send('Quiz not found');
+  }
+  res.status(200).json(quiz);
+});
 module.exports = router;

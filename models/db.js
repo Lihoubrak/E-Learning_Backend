@@ -83,6 +83,10 @@ const Course = sequelize.define(
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    categorySecondId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     }
   },
   { timestamps: false }
@@ -111,7 +115,7 @@ const SubLession = sequelize.define(
     },
     subLessionFile: DataTypes.STRING,
     subLessionFileExcercise: DataTypes.STRING,
-    subLessionFree: DataTypes.STRING,
+    subLessionFree: DataTypes.BOOLEAN,
     lessionId: {
       type: DataTypes.INTEGER,
       allowNull: false
@@ -272,7 +276,7 @@ const Comment = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    courseId: {
+    subLessionId: {
       type: DataTypes.INTEGER,
       allowNull: false
     }
@@ -292,6 +296,10 @@ const Reply = sequelize.define(
     commentId: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    parentReplyId: {
+      type: DataTypes.INTEGER,
+      allowNull: true // Allow null for top-level replies
     }
   },
   { timestamps: false }
@@ -321,7 +329,8 @@ Course.belongsTo(User);
 
 Role.hasMany(User);
 User.belongsTo(Role);
-
+CategorySecond.hasMany(Course);
+Course.belongsTo(CategorySecond);
 Course.hasMany(Lession);
 Lession.belongsTo(Course);
 
@@ -361,12 +370,24 @@ Comment.belongsTo(User);
 User.hasMany(Reply);
 Reply.belongsTo(User);
 
-Course.hasMany(Comment);
-Comment.belongsTo(Course);
+SubLession.hasMany(Comment);
+Comment.belongsTo(SubLession);
 
 Comment.hasMany(Reply);
 Reply.belongsTo(Comment);
 
+// Define associations
+Reply.hasMany(Reply, {
+  foreignKey: 'parentReplyId',
+  as: 'childReplies' // Alias for the association
+});
+
+Reply.belongsTo(Reply, {
+  foreignKey: 'parentReplyId',
+  as: 'parentReply' // Alias for the association
+});
+User.hasMany(Payment);
+Payment.belongsTo(User);
 module.exports = {
   sequelize,
   User,
