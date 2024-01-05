@@ -1,5 +1,12 @@
 const express = require('express');
-const { SubLession, Reply, Comment } = require('../models/db');
+const {
+  SubLession,
+  Reply,
+  Comment,
+  Lession,
+  Course,
+  User
+} = require('../models/db');
 const router = express.Router();
 
 router.post('/create', async (req, res) => {
@@ -18,8 +25,34 @@ router.get('/:subLessionId', async (req, res) => {
   const subLessionId = req.params.subLessionId;
   const subLession = await SubLession.findOne({
     where: { id: subLessionId },
-    include: { model: Comment, include: { model: Reply } }
+    include: [
+      {
+        model: Comment,
+        include: [
+          { model: User, attributes: ['id', 'username', 'avatar'] },
+          {
+            model: Reply,
+            include: { model: User, attributes: ['id', 'username', 'avatar'] }
+          }
+        ]
+      },
+      {
+        model: Lession,
+        attributes: ['id', 'lessionTilte', 'courseId'],
+        include: [
+          {
+            model: Course,
+            attributes: ['id'],
+            include: {
+              model: User,
+              attributes: ['id', 'username']
+            }
+          }
+        ]
+      }
+    ]
   });
+
   if (!subLession) {
     res.status(404).send('subLession not found');
   }

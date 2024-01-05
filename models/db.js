@@ -113,6 +113,14 @@ const SubLession = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0
     },
+    subLessionTime: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    subLessionCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
     subLessionFile: DataTypes.STRING,
     subLessionFileExcercise: DataTypes.STRING,
     subLessionFree: DataTypes.BOOLEAN,
@@ -133,13 +141,13 @@ const Quiz = sequelize.define(
     },
     quizDate: {
       type: DataTypes.DATE,
-      allowNull: false
+      allowNull: true
     },
     quizDuration: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    subLessionId: {
+    lessionId: {
       type: DataTypes.INTEGER,
       allowNull: false
     }
@@ -244,29 +252,6 @@ const ReviewCourse = sequelize.define(
   { timestamps: false }
 );
 
-const Enrollment = sequelize.define(
-  'enrollment',
-  {
-    enrollmentDate: {
-      type: DataTypes.DATE,
-      defaultValue: sequelize.fn('now')
-    },
-    status: {
-      type: DataTypes.ENUM('active', 'inactive'),
-      defaultValue: 'active'
-    },
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
-    courseId: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    }
-  },
-  { timestamps: false }
-);
-
 const Comment = sequelize.define(
   'comment',
   {
@@ -299,12 +284,33 @@ const Reply = sequelize.define(
     },
     parentReplyId: {
       type: DataTypes.INTEGER,
-      allowNull: true // Allow null for top-level replies
+      allowNull: true
     }
   },
   { timestamps: false }
 );
-
+const Enrollment = sequelize.define(
+  'enrollment',
+  {
+    enrollmentDate: {
+      type: DataTypes.DATE,
+      defaultValue: sequelize.fn('now')
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'inactive'),
+      defaultValue: 'active'
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    courseId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
+  },
+  { timestamps: false }
+);
 const Payment = sequelize.define(
   'payment',
   {
@@ -313,10 +319,32 @@ const Payment = sequelize.define(
       type: DataTypes.DATE,
       defaultValue: sequelize.fn('now')
     },
-    paymentMethod: DataTypes.STRING
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    stripeChargeId: DataTypes.STRING
   },
   { timestamps: false }
 );
+const EnrollmentPayment = sequelize.define('enrollment_payment', {
+  enrollmentId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  paymentId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  paymentType: DataTypes.STRING,
+  paymentStatus: DataTypes.ENUM('pending', 'completed', 'failed'),
+  paymentDate: DataTypes.DATE,
+  amount: DataTypes.DECIMAL,
+  currency: DataTypes.STRING,
+  notes: DataTypes.TEXT
+});
+Enrollment.belongsToMany(Payment, { through: EnrollmentPayment });
+Payment.belongsToMany(Enrollment, { through: EnrollmentPayment });
 
 Category.hasMany(CategoryFirst);
 CategoryFirst.belongsTo(Category);
@@ -349,8 +377,8 @@ Course.hasMany(ReviewCourse);
 ReviewCourse.belongsTo(User);
 User.hasMany(ReviewCourse);
 
-SubLession.hasMany(Quiz);
-Quiz.belongsTo(SubLession);
+Lession.hasMany(Quiz);
+Quiz.belongsTo(Lession);
 
 Quiz.hasMany(Question);
 Question.belongsTo(Quiz);

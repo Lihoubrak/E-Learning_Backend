@@ -15,6 +15,8 @@ const reviewCourseRouter = require('./routes/reviewCourse');
 const enrollmentRouter = require('./routes/enrollment');
 const commentRouter = require('./routes/comment');
 const replyRouter = require('./routes/reply');
+const categoryRouter = require('./routes/category');
+const paymentRouter = require('./routes/payment');
 app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
@@ -30,6 +32,8 @@ app.use('/api/reviewcourses', reviewCourseRouter);
 app.use('/api/enrollments', enrollmentRouter);
 app.use('/api/comments', commentRouter);
 app.use('/api/replys', replyRouter);
+app.use('/api/categorys', categoryRouter);
+app.use('/api/payments', paymentRouter);
 sequelize
   .sync()
   .then(() => {

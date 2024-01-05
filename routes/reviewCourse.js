@@ -1,16 +1,14 @@
 const express = require('express');
 const { ReviewCourse } = require('../models/db');
+const { checkRole } = require('../middleware/authenticateToken');
 const router = express.Router();
 
-router.post('/create', async (req, res) => {
+router.post('/create', checkRole('student'), async (req, res) => {
   try {
-    const newReviewCourse = await ReviewCourse.create(req.body);
-    res.status(201).json({
-      message: 'ReviewCourse created successfully',
-      ReviewCourse: newReviewCourse
-    });
+    const userId = req.user.id;
+    const newReviewCourse = await ReviewCourse.create({ userId, ...req.body });
+    res.status(201).json(newReviewCourse);
   } catch (error) {
-    console.error('Error creating ReviewCourse:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
