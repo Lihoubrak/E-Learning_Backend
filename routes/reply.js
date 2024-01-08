@@ -3,12 +3,10 @@ const { Reply } = require('../models/db');
 const { checkRole } = require('../middleware/authenticateToken');
 const router = express.Router();
 
-router.post('/create', checkRole('student'), async (req, res) => {
+router.post('/create', async (req, res) => {
   try {
     const { parentReplyId } = req.body;
-    const userId = req.user.id;
-    console.log(req.user);
-    // Check if parentReplyId exists and is valid
+    const userId = req.body.userId;
     if (parentReplyId) {
       const parentReply = await Reply.findByPk(parentReplyId);
       if (!parentReply) {

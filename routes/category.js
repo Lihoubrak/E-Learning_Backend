@@ -4,7 +4,8 @@ const {
   CategoryFirst,
   CategorySecond,
   Course,
-  User
+  User,
+  Enrollment
 } = require('../models/db');
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/', async (req, res) => {
           model: CategorySecond,
           include: {
             model: Course,
-            include: { model: User }
+            include: [{ model: User }]
           }
         }
       }

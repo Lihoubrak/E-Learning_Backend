@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config();
+
 function checkRole(role) {
   return function (req, res, next) {
     const authorizationHeader = req.headers['authorization'];
@@ -29,6 +30,7 @@ function checkRole(role) {
     });
   };
 }
+
 function generateToken(user) {
   const token = jwt.sign(
     {
@@ -44,4 +46,30 @@ function generateToken(user) {
   return token;
 }
 
-module.exports = { checkRole, generateToken };
+function checkUserId(req, res, next) {
+  const userIdFromToken = req.user.id;
+  const userIdFromRequest = req.params.userId; // Adjust this based on your route structure
+  console.log('userIdFromRequest', userIdFromRequest);
+  console.log('userIdFromToken', userIdFromToken);
+  if (userIdFromToken === parseInt(userIdFromRequest)) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden: User ID mismatch' });
+  }
+}
+
+function checkUserRole(requiredRole) {
+  return function (req, res, next) {
+    const userRole = req.user.role.roleName;
+
+    if (userRole.trim() === requiredRole) {
+      next();
+    } else {
+      res
+        .status(403)
+        .json({ message: 'Forbidden: Insufficient role privileges' });
+    }
+  };
+}
+
+module.exports = { checkRole, generateToken, checkUserId, checkUserRole };

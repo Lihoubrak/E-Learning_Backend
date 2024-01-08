@@ -345,7 +345,10 @@ const EnrollmentPayment = sequelize.define('enrollment_payment', {
 });
 Enrollment.belongsToMany(Payment, { through: EnrollmentPayment });
 Payment.belongsToMany(Enrollment, { through: EnrollmentPayment });
-
+Enrollment.hasMany(EnrollmentPayment);
+EnrollmentPayment.belongsTo(Enrollment);
+Payment.hasMany(EnrollmentPayment);
+EnrollmentPayment.belongsTo(Payment);
 Category.hasMany(CategoryFirst);
 CategoryFirst.belongsTo(Category);
 
@@ -434,5 +437,6 @@ module.exports = {
   Enrollment,
   Comment,
   Reply,
-  Payment
+  Payment,
+  EnrollmentPayment
 };

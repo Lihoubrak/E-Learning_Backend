@@ -1,5 +1,5 @@
 const express = require('express');
-const { Payment, Enrollment } = require('../models/db');
+const { Payment, Enrollment, EnrollmentPayment } = require('../models/db');
 const { checkRole } = require('../middleware/authenticateToken');
 const stripe = require('stripe')(
   'sk_test_51MsVL5FC5YM2xOXYYLRCwi8nWA85GbGJCtfzVe7k25dNrHpkB4AKsS9Wx5PaUOndwxX4GenTXo3906Wo7JCWjj2w00lBzUVp0S'
@@ -19,6 +19,8 @@ router.post('/create', checkRole('student'), async (req, res) => {
   try {
     const courses = req.body.courses;
     const userId = req.user.id;
+
+    // Create line items for the Stripe session
     const lineItems = courses.map((course) => ({
       price_data: {
         currency: 'usd',
@@ -31,6 +33,7 @@ router.post('/create', checkRole('student'), async (req, res) => {
       quantity: 1
     }));
 
+    // Create a Stripe session
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
       mode: 'payment',
@@ -39,23 +42,65 @@ router.post('/create', checkRole('student'), async (req, res) => {
       cancel_url: 'https://example.com/cancel'
     });
 
-    res.json({ id: session.id });
-    // **Save courses to database after successful payment**
+    // Save payment information to the database
+    const paymentAmount = courses.reduce(
+      (total, course) => total + course.coursePrice,
+      0
+    );
+    const payment = await Payment.create({
+      paymentAmount,
+      userId,
+      stripeChargeId: session.id
+    });
+
+    // Save enrolled courses to the database
     await Promise.all(
       courses.map(async (course) => {
         try {
-          const newCourse = new Enrollment({
+          const newEnrollment = new Enrollment({
             userId,
             courseId: course.id
           });
-          await newCourse.save();
+          const savedEnrollment = await newEnrollment.save();
+
+          // Create enrollment payment record
+          await EnrollmentPayment.create({
+            enrollmentId: savedEnrollment.id,
+            paymentId: payment.id,
+            paymentType: 'stripe', // You can customize this based on your needs
+            paymentStatus: 'completed', // Assuming the payment is successful
+            paymentDate: new Date(),
+            amount: course.coursePrice,
+            currency: 'usd', // Set the currency based on your needs
+            notes: 'Enrollment payment'
+          });
         } catch (error) {
-          console.error('Error saving course to database:', error);
+          console.error('Error saving course enrollment to database:', error);
         }
       })
     );
+
+    // Respond with the Stripe session ID
+    res.json({ id: session.id });
   } catch (error) {
     console.error('Error creating Stripe checkout session:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+// Retrieve all payments for a specific user
+router.get('/user', checkRole('student'), async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Retrieve all payments associated with the user
+    const userPayments = await Payment.findAll({
+      where: { userId },
+      include: [{ model: EnrollmentPayment, include: [Enrollment] }]
+    });
+
+    res.json(userPayments);
+  } catch (error) {
+    console.error('Error retrieving payments:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
